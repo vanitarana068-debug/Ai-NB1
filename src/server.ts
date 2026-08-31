@@ -3,6 +3,8 @@ import "./lib/error-capture";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { handleChatRequest } from "./server/chat";
+import { handleOrderEmail } from "./server/email";
+import { handleCreateOrder, handleVerifyPayment, handleWebhook } from "./server/razorpay";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -53,6 +55,18 @@ export default {
       const { pathname } = new URL(request.url);
       if (pathname === "/api/chat") {
         return await handleChatRequest(request, env);
+      }
+      if (pathname === "/api/payments/razorpay/order") {
+        return await handleCreateOrder(request, env);
+      }
+      if (pathname === "/api/payments/razorpay/verify") {
+        return await handleVerifyPayment(request, env);
+      }
+      if (pathname === "/api/payments/razorpay/webhook") {
+        return await handleWebhook(request, env);
+      }
+      if (pathname === "/api/orders/email") {
+        return await handleOrderEmail(request, env);
       }
 
       const handler = await getServerEntry();

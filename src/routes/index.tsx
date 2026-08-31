@@ -16,7 +16,7 @@ export const Route = createFileRoute("/")({
 const promises = [
   {
     icon: Truck,
-    title: "Free delivery over £50",
+    title: "Free delivery over ₹50",
     body: "Next working day on anything ordered before 4pm.",
   },
   {

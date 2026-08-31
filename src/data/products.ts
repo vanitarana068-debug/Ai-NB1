@@ -88,8 +88,8 @@ export const products: Product[] = [
     name: "Nordvane Aero 14",
     brand: "Nordvane",
     category: "laptops",
-    price: 129900,
-    wasPrice: 144900,
+    price: 13639500,
+    wasPrice: 15214500,
     image: pLaptopUltra,
     tagline: "A 1.2 kg aluminium ultrabook that lasts a full working day.",
     description:
@@ -111,14 +111,14 @@ export const products: Product[] = [
     rating: 4.6,
     reviewCount: 218,
     stock: 12,
-    badge: "Save £150",
+    badge: "Save ₹15,750",
   },
   {
     slug: "nordvane-raider-16",
     name: "Nordvane Raider 16",
     brand: "Nordvane",
     category: "laptops",
-    price: 184900,
+    price: 19414500,
     image: pLaptopGaming,
     tagline: "A 16-inch gaming laptop with the cooling to hold its clocks.",
     description:
@@ -147,8 +147,8 @@ export const products: Product[] = [
     name: "Kestrel Nova 9",
     brand: "Kestrel",
     category: "mobile",
-    price: 74900,
-    wasPrice: 79900,
+    price: 7864500,
+    wasPrice: 8389500,
     image: pPhoneAndroid,
     tagline: "A flagship handset in emerald, with a camera that earns its keep.",
     description:
@@ -176,7 +176,7 @@ export const products: Product[] = [
     name: "Kestrel Slate 11",
     brand: "Kestrel",
     category: "mobile",
-    price: 42900,
+    price: 4504500,
     image: pTablet,
     tagline: "An 11-inch tablet that is genuinely usable as a second screen.",
     description:
@@ -204,8 +204,8 @@ export const products: Product[] = [
     name: "Aurex Quietude 900",
     brand: "Aurex",
     category: "audio",
-    price: 32900,
-    wasPrice: 37900,
+    price: 3454500,
+    wasPrice: 3979500,
     image: pHeadphones,
     tagline: "Over-ear noise cancelling built for eight-hour days.",
     description:
@@ -226,14 +226,14 @@ export const products: Product[] = [
     rating: 4.8,
     reviewCount: 511,
     stock: 31,
-    badge: "Save £50",
+    badge: "Save ₹5,250",
   },
   {
     slug: "meridian-vista-27",
     name: "Meridian Vista 27",
     brand: "Meridian",
     category: "displays",
-    price: 54900,
+    price: 5764500,
     image: pMonitor,
     tagline: "A colour-accurate 4K panel that also handles 144 Hz.",
     description:
@@ -260,7 +260,7 @@ export const products: Product[] = [
     name: "Meridian Tactile 75",
     brand: "Meridian",
     category: "displays",
-    price: 13900,
+    price: 1459500,
     image: pKeyboard,
     tagline: "A 75% mechanical board with gasket mounting and hot-swap sockets.",
     description:
@@ -287,7 +287,7 @@ export const products: Product[] = [
     name: "Meridian Glide Pro",
     brand: "Meridian",
     category: "displays",
-    price: 7900,
+    price: 829500,
     image: pMouse,
     tagline: "A lightweight wireless mouse with a sensor that never guesses.",
     description:
@@ -314,8 +314,8 @@ export const products: Product[] = [
     name: "Corvus RX-9070 XT",
     brand: "Corvus",
     category: "components",
-    price: 68900,
-    wasPrice: 74900,
+    price: 7234500,
+    wasPrice: 7864500,
     image: pGpu,
     tagline: "16 GB of graphics memory aimed squarely at 1440p ultra.",
     description:
@@ -337,14 +337,14 @@ export const products: Product[] = [
     rating: 4.5,
     reviewCount: 231,
     stock: 7,
-    badge: "Save £60",
+    badge: "Save ₹6,300",
   },
   {
     slug: "corvus-apex-9",
     name: "Corvus Apex 9 7950",
     brand: "Corvus",
     category: "components",
-    price: 52900,
+    price: 5554500,
     image: pCpu,
     tagline: "Sixteen cores for people who compile, render or both.",
     description:
@@ -372,7 +372,7 @@ export const products: Product[] = [
     name: "Helix Torrent 2 TB NVMe",
     brand: "Helix",
     category: "components",
-    price: 16900,
+    price: 1774500,
     image: pSsd,
     tagline: "PCIe 4.0 storage that holds its speed when the cache runs out.",
     description:
@@ -400,7 +400,7 @@ export const products: Product[] = [
     name: "Beacon Mesh AX6600",
     brand: "Beacon",
     category: "connected",
-    price: 24900,
+    price: 2614500,
     image: pRouter,
     tagline: "Tri-band mesh with a dedicated backhaul that keeps its speed.",
     description:
@@ -427,7 +427,7 @@ export const products: Product[] = [
     name: "Beacon Hub Mini",
     brand: "Beacon",
     category: "connected",
-    price: 11900,
+    price: 1249500,
     image: pSmarthome,
     tagline: "A smart speaker and sensor pair that runs locally.",
     description:
@@ -454,7 +454,7 @@ export const products: Product[] = [
     name: "Volta GaN 100 W Charger",
     brand: "Volta",
     category: "connected",
-    price: 5900,
+    price: 619500,
     image: pCharger,
     tagline: "One brick, four ports, enough power for a laptop and a phone at once.",
     description:
@@ -478,15 +478,15 @@ export const products: Product[] = [
   },
 ];
 
-const gbp = new Intl.NumberFormat("en-GB", {
+const inr = new Intl.NumberFormat("en-IN", {
   style: "currency",
-  currency: "GBP",
+  currency: "INR",
   minimumFractionDigits: 2,
 });
 
-/** Formats a price held in pence, e.g. 129900 -> "£1,299.00". */
-export function formatPrice(pence: number): string {
-  return gbp.format(pence / 100);
+/** Formats a price held in paise, e.g. 7864500 -> "₹78,645.00". */
+export function formatPrice(paise: number): string {
+  return inr.format(paise / 100);
 }
 
 export function getProduct(slug: string): Product | undefined {

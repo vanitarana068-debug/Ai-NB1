@@ -117,7 +117,7 @@ function ProductPage() {
           </div>
 
           <p className="mt-2 text-sm text-muted-foreground">
-            Includes VAT. Free delivery on orders over £50.
+            Includes VAT. Free delivery on orders over ₹50.
           </p>
 
           <div className="mt-4 flex items-center gap-2 text-sm">

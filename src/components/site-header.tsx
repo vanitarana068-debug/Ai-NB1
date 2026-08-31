@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { CircuitBoard, Menu, Search, ShoppingCart, User, X } from "lucide-react";
+import { CircuitBoard, Menu, Phone, Search, ShoppingCart, User, X } from "lucide-react";
 import * as React from "react";
 
 import { CartSheet } from "@/components/cart-sheet";
@@ -80,6 +80,15 @@ export function SiteHeader() {
             />
           </div>
         </form>
+
+        <a
+          href="tel:+12722282233"
+          className="ml-auto hidden shrink-0 items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground md:ml-0 md:flex"
+          aria-label="Call our specialists on +1 (272) 228 2233"
+        >
+          <Phone className="size-4" />
+          <span className="hidden lg:inline tabular-nums">+1 (272) 228 2233</span>
+        </a>
 
         <Button
           asChild

@@ -11,6 +11,8 @@ type AuthContextValue = {
   session: Session | null;
   user: User | null;
   profile: Profile | null;
+  /** True when the signed-in user is staff. False while signed out or loading. */
+  isAdmin: boolean;
   /** False until the stored session has been read back on the client. */
   ready: boolean;
   signUp: (email: string, password: string, fullName: string) => Promise<SignUpResult>;
@@ -129,6 +131,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       session,
       user: session?.user ?? null,
       profile,
+      isAdmin: profile?.role === "admin",
       ready,
       signUp,
       signIn,

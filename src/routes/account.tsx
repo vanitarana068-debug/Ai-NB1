@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Loader2, LogOut, Package, Save } from "lucide-react";
+import { Loader2, LogOut, Package, Save, ShieldCheck } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
 
@@ -38,7 +38,7 @@ const emptyProfile: ProfileForm = {
 };
 
 function AccountPage() {
-  const { user, profile, ready, signOut, updateProfile } = useAuth();
+  const { user, profile, isAdmin, ready, signOut, updateProfile } = useAuth();
 
   const [form, setForm] = React.useState<ProfileForm>(emptyProfile);
   const [saving, setSaving] = React.useState(false);
@@ -124,10 +124,20 @@ function AccountPage() {
           <h1 className="text-3xl font-semibold tracking-tight">Your account</h1>
           <p className="mt-1 text-sm text-muted-foreground">{user.email}</p>
         </div>
-        <Button variant="outline" onClick={() => void signOut()}>
-          <LogOut />
-          Sign out
-        </Button>
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <Button asChild variant="outline">
+              <Link to="/admin">
+                <ShieldCheck />
+                Admin
+              </Link>
+            </Button>
+          )}
+          <Button variant="outline" onClick={() => void signOut()}>
+            <LogOut />
+            Sign out
+          </Button>
+        </div>
       </div>
 
       <section className="mt-10 rounded-xl border p-6">

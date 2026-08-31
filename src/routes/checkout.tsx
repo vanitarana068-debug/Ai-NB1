@@ -13,6 +13,7 @@ import { useAuth } from "@/lib/auth";
 import { useCart, type ResolvedLine } from "@/lib/cart";
 import { invalidateStockLevels } from "@/lib/inventory";
 import { placeOrder } from "@/lib/orders";
+import { isRazorpayConfigured, payWithRazorpay } from "@/lib/razorpay";
 import {
   authorisePayment,
   describePayment,
@@ -119,7 +120,9 @@ function CheckoutPage() {
       next.email = "Enter a valid email address";
     }
 
-    const paymentIssues = validatePayment(payment);
+    // With Razorpay live, the widget collects and validates the payment itself,
+    // so the local card/UPI form isn't shown and isn't validated here.
+    const paymentIssues = isRazorpayConfigured() ? {} : validatePayment(payment);
 
     setErrors(next);
     setPaymentErrors(paymentIssues);
@@ -136,17 +139,34 @@ function CheckoutPage() {
 
     setSubmitting(true);
 
-    // Take the money first: a declined card, a UPI request that times out or a
-    // wallet sheet the shopper dismisses must not decrement stock.
-    const authorisation = await authorisePayment(payment);
-    if (!authorisation.ok) {
-      setSubmitting(false);
-      setSubmitError(authorisation.error);
-      return;
+    // Take the money first: an unpaid or cancelled payment must never decrement
+    // stock. With a live Razorpay key the shopper pays in the widget and we
+    // verify the signature server-side; otherwise the demo stub stands in.
+    const useRazorpay = isRazorpayConfigured();
+
+    if (useRazorpay) {
+      const result = await payWithRazorpay({
+        items: resolved.map((line) => ({ slug: line.product.slug, quantity: line.quantity })),
+        deliverySpeed: speed,
+        prefill: { name: values.fullName.trim(), email: values.email.trim() },
+      });
+      if (!result.ok) {
+        setSubmitting(false);
+        setSubmitError(result.error);
+        return;
+      }
+    } else {
+      const authorisation = await authorisePayment(payment);
+      if (!authorisation.ok) {
+        setSubmitting(false);
+        setSubmitError(authorisation.error);
+        return;
+      }
     }
 
-    // Only the masked description travels — never the card number itself.
-    const paidWith = describePayment(payment);
+    // What gets recorded against the order. For Razorpay we don't hold the
+    // instrument; for the demo path it's the masked description (never the PAN).
+    const paidWith = useRazorpay ? "Paid via Razorpay" : describePayment(payment);
 
     const { order, error } = await placeOrder({
       fullName: values.fullName.trim(),
@@ -169,6 +189,13 @@ function CheckoutPage() {
 
     // Totals come back from the database, which priced the order itself.
     setPlaced({ reference: order.reference, lines: resolved, total: order.total_pence, paidWith });
+    // Fire-and-forget the confirmation email; a failure or missing key must not
+    // affect the confirmation the shopper already sees.
+    void fetch("/api/orders/email", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ reference: order.reference }),
+    }).catch(() => {});
     // Don't leave card digits sitting in component state once we're done.
     setPayment({ ...emptyPaymentDraft, method: payment.method });
     // Stock just moved, so the cached levels are stale.
@@ -223,8 +250,9 @@ function CheckoutPage() {
 
         <p className="mt-6 flex items-start gap-2 rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
           <Info className="mt-0.5 size-4 shrink-0" />
-          This is a demonstration storefront. No payment was taken and nothing will be dispatched.
-          The order is saved to your account.
+          {isRazorpayConfigured()
+            ? "Your payment was confirmed and the order is saved to your account."
+            : "This is a demonstration storefront. No payment was taken and nothing will be dispatched. The order is saved to your account."}
         </p>
 
         <div className="mt-8 flex justify-center gap-3">
@@ -368,18 +396,27 @@ function CheckoutPage() {
               <Lock className="size-4" />
               Payment
             </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Choose how you'd like to pay. This storefront is a demonstration with no payment
-              provider behind it, so nothing is ever charged.
-            </p>
+            {isRazorpayConfigured() ? (
+              <p className="mt-2 text-sm text-muted-foreground">
+                You'll pay securely with Razorpay — card, UPI, EMI, wallets, Apple Pay or Google
+                Pay. Choose your method in the payment window after you press pay.
+              </p>
+            ) : (
+              <>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Choose how you'd like to pay. This storefront is a demonstration with no payment
+                  provider behind it, so nothing is ever charged.
+                </p>
 
-            <PaymentMethods
-              value={payment}
-              errors={paymentErrors}
-              total={total}
-              disabled={submitting}
-              onChange={setPayment}
-            />
+                <PaymentMethods
+                  value={payment}
+                  errors={paymentErrors}
+                  total={total}
+                  disabled={submitting}
+                  onChange={setPayment}
+                />
+              </>
+            )}
           </section>
         </div>
 
@@ -420,7 +457,9 @@ function CheckoutPage() {
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Paying with</dt>
-                <dd>{getPaymentMethod(payment.method).label}</dd>
+                <dd>
+                  {isRazorpayConfigured() ? "Razorpay" : getPaymentMethod(payment.method).label}
+                </dd>
               </div>
               <Separator className="my-2" />
               <div className="flex justify-between text-base font-semibold">
@@ -444,7 +483,9 @@ function CheckoutPage() {
             </Button>
 
             <p className="mt-3 text-center text-xs text-muted-foreground">
-              Demo only — no payment is taken.
+              {isRazorpayConfigured()
+                ? "Secured by Razorpay. You'll confirm payment in the next step."
+                : "Demo only — no payment is taken."}
             </p>
           </div>
         </aside>

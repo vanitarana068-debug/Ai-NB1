@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 
+import { recordClaudeUsage } from "./claude-usage";
 import { buildKnowledgeBase, matchFaq, matchProducts } from "@/lib/faq";
 import { formatPrice } from "@/data/products";
 
@@ -21,7 +22,7 @@ const SYSTEM_INSTRUCTIONS = `You are the shop assistant for Northbridge, a UK co
 
 Answer shoppers' questions using only the policies and catalogue below. That reference is the single source of truth: if it doesn't cover something, say you don't have that detail and point them at the contact details in the footer. Never invent a price, a stock figure, a delivery time, a policy, or a product that isn't listed.
 
-Keep answers short — two or three sentences is usually right. Write plainly, in British English, with no markdown headings or bullet lists. Prices are in pounds and already include VAT.
+Keep answers short — two or three sentences is usually right. Write plainly, in British English, with no markdown headings or bullet lists. Prices are in Indian rupees (₹) and already include VAT.
 
 You cannot look up a specific customer's order, change an order, process a refund, or see anything about the person you're talking to. If asked, explain that their account page lists their orders, and that the contact details are in the footer.
 
@@ -153,6 +154,18 @@ export async function handleChatRequest(request: Request, env: unknown): Promise
             }
           }
           const final = await stream.finalMessage();
+
+          // Record what this call cost. Fire-and-forget and self-contained: it
+          // never throws, so it can't disturb the answer already streaming out.
+          void recordClaudeUsage(env, {
+            model: MODEL,
+            source: "chat",
+            inputTokens: final.usage.input_tokens ?? 0,
+            outputTokens: final.usage.output_tokens ?? 0,
+            cacheReadTokens: final.usage.cache_read_input_tokens ?? 0,
+            cacheWriteTokens: final.usage.cache_creation_input_tokens ?? 0,
+          });
+
           if (!emitted && final.stop_reason === "refusal") {
             controller.enqueue(
               encoder.encode("Sorry — I can't help with that one. Try a question about the shop."),

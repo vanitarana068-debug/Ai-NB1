@@ -8,6 +8,9 @@ export type DeliverySpeed = "standard" | "express";
 /** Mirrors PaymentMethodId in src/lib/payments.ts and the orders check constraint. */
 export type PaymentMethodName = "card" | "upi" | "apple_pay" | "google_pay" | "paypal";
 
+/** Staff vs. shopper. Set in the database, never from the client. */
+export type UserRole = "customer" | "admin";
+
 export type Profile = {
   id: string;
   email: string | null;
@@ -16,6 +19,7 @@ export type Profile = {
   address2: string | null;
   city: string | null;
   postcode: string | null;
+  role: UserRole;
   created_at: string;
   updated_at: string;
 };
@@ -74,6 +78,18 @@ export type StockMovement = {
   created_at: string;
 };
 
+/** One row per admin price change, written by admin_update_product(). */
+export type ProductPriceHistory = {
+  id: number;
+  product_slug: string;
+  old_price_pence: number | null;
+  new_price_pence: number;
+  old_was_price_pence: number | null;
+  new_was_price_pence: number | null;
+  changed_by: string | null;
+  changed_at: string;
+};
+
 export type ReviewStatus = "published" | "hidden";
 
 export type ReviewRow = {
@@ -117,6 +133,43 @@ export type ProductRating = {
   one_star: number;
 };
 
+/** The Anthropic rate card that record_claude_usage() prices calls against. */
+export type ClaudePricingRow = {
+  model: string;
+  input_usd_per_mtok: number;
+  output_usd_per_mtok: number;
+  cache_read_usd_per_mtok: number;
+  cache_write_usd_per_mtok: number;
+  updated_at: string;
+};
+
+/** One recorded Anthropic API call. cost_usd is frozen at insert time. */
+export type ClaudeUsageRow = {
+  id: number;
+  created_at: string;
+  model: string;
+  source: string;
+  input_tokens: number;
+  output_tokens: number;
+  cache_read_tokens: number;
+  cache_write_tokens: number;
+  cost_usd: number;
+  user_id: string | null;
+  meta: unknown | null;
+};
+
+/** claude_usage_daily: the bill at a glance — one row per day per model. */
+export type ClaudeUsageDaily = {
+  usage_date: string;
+  model: string;
+  calls: number;
+  input_tokens: number;
+  output_tokens: number;
+  cache_read_tokens: number;
+  cache_write_tokens: number;
+  cost_usd: number;
+};
+
 /** One row per basket line, as place_order() expects it. */
 export type PlaceOrderItem = {
   slug: string;
@@ -147,6 +200,23 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "stock_movements_product_slug_fkey";
+            columns: ["product_slug"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["slug"];
+          },
+        ];
+      };
+      product_price_history: {
+        Row: ProductPriceHistory;
+        Insert: Omit<ProductPriceHistory, "id" | "changed_at"> & {
+          id?: number;
+          changed_at?: string;
+        };
+        Update: Partial<Omit<ProductPriceHistory, "id">>;
+        Relationships: [
+          {
+            foreignKeyName: "product_price_history_product_slug_fkey";
             columns: ["product_slug"];
             isOneToOne: false;
             referencedRelation: "products";
@@ -215,6 +285,24 @@ export type Database = {
           },
         ];
       };
+      claude_pricing: {
+        Row: ClaudePricingRow;
+        Insert: Omit<ClaudePricingRow, "updated_at"> & { updated_at?: string };
+        Update: Partial<ClaudePricingRow>;
+        Relationships: [];
+      };
+      claude_usage: {
+        Row: ClaudeUsageRow;
+        // Written only through record_claude_usage(); id, cost and timestamp
+        // are set by the database, never the caller.
+        Insert: Omit<ClaudeUsageRow, "id" | "created_at" | "cost_usd"> & {
+          id?: number;
+          created_at?: string;
+          cost_usd?: number;
+        };
+        Update: Partial<ClaudeUsageRow>;
+        Relationships: [];
+      };
     };
     Views: {
       low_stock: {
@@ -239,8 +327,43 @@ export type Database = {
         Row: ProductRating;
         Relationships: [];
       };
+      claude_usage_daily: {
+        Row: ClaudeUsageDaily;
+        Relationships: [];
+      };
     };
     Functions: {
+      set_order_status: {
+        Args: { p_order_id: string; p_status: OrderStatus };
+        Returns: Order;
+      };
+      admin_set_stock: {
+        Args: { p_slug: string; p_stock: number; p_note?: string | null };
+        Returns: number;
+      };
+      admin_update_product: {
+        Args: {
+          p_slug: string;
+          p_price_pence: number;
+          p_was_price_pence: number | null;
+          p_low_stock_at: number;
+          p_active: boolean;
+        };
+        Returns: ProductRow;
+      };
+      record_claude_usage: {
+        Args: {
+          p_model: string;
+          p_input_tokens: number;
+          p_output_tokens: number;
+          p_cache_read_tokens?: number;
+          p_cache_write_tokens?: number;
+          p_source?: string;
+          p_user_id?: string | null;
+          p_meta?: unknown | null;
+        };
+        Returns: number;
+      };
       place_order: {
         Args: {
           p_full_name: string;
