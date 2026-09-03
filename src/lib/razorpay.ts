@@ -13,7 +13,7 @@ const CHECKOUT_SCRIPT = "https://checkout.razorpay.com/v1/checkout.js";
 
 /** Whether a live Razorpay key is present. When false, checkout uses the demo path. */
 export function isRazorpayConfigured(): boolean {
-  return Boolean(import.meta.env["VITE_RAZORPAY_KEY_ID"]);
+  return false; // Demo mode: checkout displays payment methods but does not charge
 }
 
 export type RazorpayItem = { slug: string; quantity: number };
